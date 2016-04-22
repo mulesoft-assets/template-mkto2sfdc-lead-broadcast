@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:marketo="http://www.mulesoft.org/schema/mule/marketo"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/marketo http://www.mulesoft.org/schema/mule/marketo/current/mule-marketo.xsd
+http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+    <jms:activemq-connector name="Active_MQ" specification="1.1" validateConnections="true" doc:name="Active MQ"/>
+	<batch:job name="broadcastLeadBatchA">
+		<batch:threading-profile poolExhaustedAction="WAIT" />
+		<batch:process-records>
+			<batch:step name="GetLeadInSfdcInstanceAStep">
+                <logger message="aaaaaaa" level="INFO" doc:name="Logger"/>
+				<enricher source="#[payload != null ? payload.Id : null]"
+					target="#[payload.Id]" doc:name="store id from Salesforce instance A in payload">
+					<sfdc:query-single config-ref="SalesforceA"
+						query="SELECT Id FROM Lead WHERE Email = '#[payload['Email']]'"
+						doc:name="Query Lead from Salesforce Instance A" />
+				</enricher>
+			</batch:step>
+			<batch:step name="FindOrCreateOwnerStep"
+				accept-expression="'syncOwner' == '${owner.sync.policy}'">
+				<choice doc:name="Does owner in Marketo exist?">
+					<when expression="#[payload['OwnerId'] != null]">
+						<enricher source="#[payload]" target="#[recordVars.owner]"
+							doc:name="store result in owner">
+							<sfdc:query-single config-ref="SalesforceA"
+								query="SELECT Id, Username FROM User WHERE Id = '#[payload['OwnerId']]'"
+								doc:name="Query Owner in Salesforce Instance A" />
+						</enricher>
+						<choice doc:name="Does owner need to be created?">
+							<when expression="#[recordVars.owner == null]">
+								<enricher doc:name="store result in payload" target="#[recordVars.ownerInA]">
+                                    <sfdc:retrieve config-ref="SalesforceA" type="User" doc:name="Query origin Owner in Salesforce A to get all required field.">
+                                        <sfdc:ids>
+                                            <sfdc:id>#[payload['Owner']['Id']]</sfdc:id>
+                                        </sfdc:ids>
+                                        <sfdc:fields>
+                                            <sfdc:field>Email</sfdc:field>
+                                            <sfdc:field>LastName</sfdc:field>
+                                            <sfdc:field>Alias</sfdc:field>
+                                            <sfdc:field>Username</sfdc:field>
+                                            <sfdc:field>LanguageLocaleKey</sfdc:field>
+                                            <sfdc:field>TimeZoneSidKey</sfdc:field>
+                                            <sfdc:field>LocaleSidKey</sfdc:field>
+                                            <sfdc:field>EmailEncodingKey</sfdc:field>
+                                        </sfdc:fields>
+                                    </sfdc:retrieve>
+
+								</enricher>
+								<enricher doc:name="enrich payload with new OwnerId"
+									target="#[payload.OwnerId]" source="#[payload[0].getId()]">
+									<processor-chain doc:name="Processor Chain">
+										<dw:transform-message doc:name="Prepare for a create Owner">
+											<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+
+---
+recordVars.ownerInA map {
+	($ - 'Id'),
+	ProfileId : p('sfdc.b.user.profile.id'),
+	Username : $.Username + '.target' + math.random
+}
+]]></dw:set-payload>
+										</dw:transform-message>
+                                        <sfdc:create config-ref="SalesforceB" type="User" doc:name="Create Owner in Salesforce A">
+                                            <sfdc:objects ref="#[payload]"/>
+                                        </sfdc:create>
+
+
+									</processor-chain>
+								</enricher>
+							</when>
+							<otherwise>
+								<enricher target="#[payload.OwnerId]" doc:name="enrich payload with existing OwnerId">
+									<expression-transformer expression="#[recordVars.owner.Id]"
+										doc:name="Get existing owner id" />
+								</enricher>
+							</otherwise>
+						</choice>
+
+					</when>
+					<otherwise>
+						<logger level="INFO" doc:name="Logger"
+							message="There is no Owner assigned to this Lead. Doing nothing" />
+					</otherwise>
+				</choice>
+			</batch:step>
+			<batch:step name="UpsertLeadStep">
+
+				<batch:commit size="${page.size}" doc:name="Batch Commit">
+					<logger message="Lead to update/create in batch A: #[payload]" level="INFO"
+						doc:name="Log 'Lead objects to update/create'" />
+					<dw:transform-message doc:name="Prepare for upsert Leads">
+						<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload map {
+	($ - 'OwnerId')
+}]]></dw:set-payload>
+					</dw:transform-message>
+					<sfdc:upsert config-ref="SalesforceA"
+						externalIdFieldName="Id" type="Lead"
+						doc:name="Upsert Leads in Salesforce Instance A">
+						<sfdc:objects ref="#[payload]" />
+					</sfdc:upsert>
+				</batch:commit>
+			</batch:step>
+		</batch:process-records>
+		<batch:on-complete>
+			<json:object-to-json-transformer
+				doc:name="Transform BatchJobInstance to JSON" />
+			<logger level="INFO" doc:name="Log 'batchA has finished'"
+				message="Batch A has finished: #[payload]" />
+		</batch:on-complete>
+	</batch:job>
+	<batch:job name="broadcastLeadBatchB">
+		<batch:threading-profile poolExhaustedAction="WAIT" />
+		<batch:process-records>
+			<batch:step name="GetLeadInSfdcInstanceBStep">
+
+				<enricher source="#[payload != null ? payload.Id : null]"
+					target="#[payload.Id]" doc:name="store id from Salesforce instance A in payload">
+					<sfdc:query-single config-ref="SalesforceB"
+						query="SELECT Id FROM Lead WHERE Email = '#[payload['Email']]'"
+						doc:name="Query Lead from Salesforce Instance B" />
+				</enricher>
+			</batch:step>
+			<batch:step name="FindOrCreateOwnerStep"
+				accept-expression="'syncOwner' == '${owner.sync.policy}'">
+				<choice doc:name="Does owner in Marketo exist?">
+					<when expression="#[payload['OwnerId'] != null]">
+						<enricher source="#[payload]" target="#[recordVars.ownerInB]"
+							doc:name="Store result in owner">
+							<sfdc:query-single config-ref="SalesforceB"
+								query="SELECT Id, Username FROM User WHERE Id = '#[payload['OwnerId']]'"
+								doc:name="Query Owner in Salesforce Instance B" />
+						</enricher>
+						<choice doc:name="Does owner need to be created?">
+							<when expression="#[recordVars.owner == null]">
+								<enricher doc:name="store result in payload" target="#[recordVars.ownerInA]">
+									<sfdc:retrieve
+										doc:name="Query origin Owner in Salesforce B to get all required field."
+										config-ref="SalesforceB" type="User">
+										<sfdc:ids>
+											<sfdc:id>#[payload['Owner']['Id']]</sfdc:id>
+										</sfdc:ids>
+										<sfdc:fields>
+											<sfdc:field>Email</sfdc:field>
+											<sfdc:field>LastName</sfdc:field>
+											<sfdc:field>Alias</sfdc:field>
+											<sfdc:field>Username</sfdc:field>
+											<sfdc:field>LanguageLocaleKey</sfdc:field>
+											<sfdc:field>TimeZoneSidKey</sfdc:field>
+											<sfdc:field>LocaleSidKey</sfdc:field>
+											<sfdc:field>EmailEncodingKey</sfdc:field>
+										</sfdc:fields>
+									</sfdc:retrieve>
+								</enricher>
+								<enricher doc:name="enrich payload with new OwnerId"
+									target="#[payload.OwnerId]" source="#[payload[0].getId()]">
+									<processor-chain doc:name="Processor Chain">
+										<dw:transform-message doc:name="Prepare for a create Owner">
+											<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+
+---
+recordVars.ownerInA map {
+	($ - 'Id'),
+	ProfileId : p('sfdc.b.user.profile.id'),
+	Username : $.Username + '.target' + math.random
+}
+]]></dw:set-payload>
+										</dw:transform-message>
+                                        <sfdc:create config-ref="SalesforceB" type="User" doc:name="Create Owner in Salesforce Instance B">
+                                            <sfdc:objects ref="#[payload]"/>
+                                        </sfdc:create>
+
+
+									</processor-chain>
+								</enricher>
+							</when>
+							<otherwise>
+								<enricher target="#[payload.OwnerId]" doc:name="enrich payload with existing OwnerId">
+									<expression-transformer expression="#[recordVars.ownerInB.Id]"
+										doc:name="get existing owner id" />
+								</enricher>
+							</otherwise>
+						</choice>
+
+					</when>
+					<otherwise>
+						<logger level="INFO" doc:name="Logger"
+							message="There is no Owner assigned to this Lead. Doing nothing" />
+					</otherwise>
+				</choice>
+			</batch:step>
+			<batch:step name="UpsertLeadStep">
+
+				<batch:commit size="${page.size}" doc:name="Batch Commit">
+					<logger message="Lead to update/create in batch B: #[payload]" level="INFO"
+						doc:name="Log 'Lead objects to update/create'" />
+					<dw:transform-message doc:name="Prepare for upsert Leads">
+						<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload map {
+	($ - 'OwnerId')
+}]]></dw:set-payload>
+					</dw:transform-message>
+					<sfdc:upsert config-ref="SalesforceB"
+						externalIdFieldName="Id" type="Lead"
+						doc:name="Upsert Leads in Salesforce Instance B">
+						<sfdc:objects ref="#[payload]" />
+					</sfdc:upsert>
+				</batch:commit>
+			</batch:step>
+		</batch:process-records>
+		<batch:on-complete>
+			<json:object-to-json-transformer
+				doc:name="Transform BatchJobInstance to JSON" />
+			<logger level="INFO" doc:name="Log 'batchB has finished'"
+				message="Batch B has finished: #[payload]" />
+		</batch:on-complete>
+	</batch:job>
+    <flow name="processAQueueLeadsToBatchFlow">
+        <jms:inbound-endpoint topic="A" connector-ref="Active_MQ" doc:name="JMS - Topic A"/>
+        <byte-array-to-serializable-transformer doc:name="Byte Array to Serializable"/>
+        <logger message="Topic A is: #[payload]" level="INFO" doc:name="Log the topic A"/>
+        <batch:execute name="broadcastLeadBatchA" doc:name="Trigger broadcastLeadBatchA"/>
+    </flow>
+    <flow name="processBQueueLeadsToBatchFlow">
+        <jms:inbound-endpoint topic="B" connector-ref="Active_MQ" doc:name="JMS - Topic B"/>
+        <byte-array-to-serializable-transformer doc:name="Byte Array to Serializable"/>
+        <logger message="Topic B is: #[payload]" level="INFO" doc:name="Log the topic B"/>
+        <batch:execute name="broadcastLeadBatchB" doc:name="Trigger broadcastLeadBatchB"/>
+    </flow>
+
+	<flow name="mainFlow">
+        <dw:transform-message doc:name="Filter IDs duplicates and create otherCountries and usCountry variables">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload distinctBy $.Id]]></dw:set-payload>
+            <dw:set-variable variableName="usCountry"><![CDATA[%dw 1.0
+%output application/java
+---
+[]]]></dw:set-variable>
+            <dw:set-variable variableName="otherCountries"><![CDATA[%dw 1.0
+%output application/java
+---
+[]]]></dw:set-variable>
+        </dw:transform-message>
+        <foreach collection="#[payload]" doc:name="For Each">
+            <marketo:get-lead-by-id config-ref="Marketo_Configuration" leadId="#[payload.Id]" doc:name="Get Lead by Id from Marketo"/>
+            <dw:transform-message doc:name="Transform response to SFDC Lead fields">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	Email: payload.email,
+	FirstName: payload.firstName,
+	LastName: payload.lastName,
+	Country: payload.country, 
+	Company: payload.company when (payload.company != null) otherwise (payload.firstName ++ ' ' ++ payload.lastName),
+	OwnerId: payload.sfdcLeadOwnerId
+}]]></dw:set-payload>
+            </dw:transform-message>
+
+            <choice doc:name="Is country 'US'?">
+                <when expression="#[payload.Country != null &amp;&amp; payload.Country.equals(&quot;US&quot;)]">
+
+                    <dw:transform-message doc:name="Add Lead to us Country list">
+                        <dw:set-variable variableName="usCountry"><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.usCountry + payload]]></dw:set-variable>
+                    </dw:transform-message>
+                </when>
+                <otherwise>
+
+                    <dw:transform-message doc:name="Add Lead to otherCountries list">
+                        <dw:set-variable variableName="otherCountries"><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.otherCountries + payload]]></dw:set-variable>
+                    </dw:transform-message>
+                </otherwise>
+            </choice>
+        </foreach>
+
+        <scatter-gather doc:name="Scatter-Gather">
+            <processor-chain>
+                <set-payload value="#[flowVars.usCountry]" doc:name="Set Payload to usContry list"/>
+                <serializable-to-byte-array-transformer doc:name="Serializable to Byte Array"/>
+                <jms:outbound-endpoint topic="A" connector-ref="Active_MQ" doc:name="JMS - Topic A"/>
+            </processor-chain>
+            <processor-chain>
+                <set-payload value="#[flowVars.otherCountries]" doc:name="Set Payload to otherCountries list"/>
+                <serializable-to-byte-array-transformer doc:name="Serializable to Byte Array"/>
+                <jms:outbound-endpoint topic="B" connector-ref="Active_MQ" doc:name="JMS - Topic B"/>
+            </processor-chain>
+        </scatter-gather>
+
+
+		<exception-strategy ref="defaultChoiceExceptionStrategy"
+			doc:name="catch Exception and call defaultExceptionStrategy" />
+	</flow>
+</mule>
