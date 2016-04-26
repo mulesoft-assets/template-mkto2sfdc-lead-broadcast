@@ -23,7 +23,7 @@ Here you should not:
                 <marketo:get-paging-token config-ref="Marketo_Configuration" sinceDateTime="#[flowVars['lastQueryDate']]" doc:name="Get paging token from Marketo"/>
                 <marketo:get-lead-changes config-ref="Marketo_Configuration"  doc:name="Get Lead changes from Marketo">
                     <marketo:fields>
-                        <marketo:field>firstName,lastName</marketo:field>
+                        <marketo:field>firstName,lastName,email,company,country,sfdcLeadOwnerId</marketo:field>
                     </marketo:fields>
                 </marketo:get-lead-changes>
                 <dw:transform-message doc:name="Get Ids and ActiveDates from Marketo response">
