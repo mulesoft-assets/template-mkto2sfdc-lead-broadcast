@@ -278,10 +278,8 @@ payload distinctBy $.Id]]></dw:set-payload>
 	OwnerId: payload.sfdcLeadOwnerId
 }]]></dw:set-payload>
             </dw:transform-message>
-
             <choice doc:name="Is country 'US'?">
                 <when expression="#[payload.Country != null &amp;&amp; payload.Country.equals(&quot;US&quot;)]">
-
                     <dw:transform-message doc:name="Add Lead to us Country list">
                         <dw:set-variable variableName="usCountry"><![CDATA[%dw 1.0
 %output application/java
@@ -290,7 +288,6 @@ flowVars.usCountry + payload]]></dw:set-variable>
                     </dw:transform-message>
                 </when>
                 <otherwise>
-
                     <dw:transform-message doc:name="Add Lead to otherCountries list">
                         <dw:set-variable variableName="otherCountries"><![CDATA[%dw 1.0
 %output application/java
@@ -300,7 +297,6 @@ flowVars.otherCountries + payload]]></dw:set-variable>
                 </otherwise>
             </choice>
         </foreach>
-
         <scatter-gather doc:name="Scatter-Gather">
             <processor-chain>
                 <set-payload value="#[flowVars.usCountry]" doc:name="Set Payload to usContry list"/>
@@ -313,6 +309,7 @@ flowVars.otherCountries + payload]]></dw:set-variable>
                 <jms:outbound-endpoint topic="B" connector-ref="Active_MQ" doc:name="JMS - Topic B"/>
             </processor-chain>
         </scatter-gather>
+
 
 
 		<exception-strategy ref="defaultChoiceExceptionStrategy"

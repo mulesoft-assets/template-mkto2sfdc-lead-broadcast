@@ -1,5 +1,5 @@
 
-# Anypoint Template: Salesforce to Salesforce Lead Broadcast
+# Anypoint Template: Marketo to Salesforce Lead Broadcast
 
 + [License Agreement](#licenseagreement)
 + [Use Case](#usecase)
@@ -25,17 +25,22 @@ Note that using this template is subject to the conditions of this [License Agre
 Please review the terms of the license before downloading and using this template. In short, you are allowed to use the template for free with Mule ESB Enterprise Edition, CloudHub, or as a trial in Anypoint Studio.
 
 # Use Case <a name="usecase"/>
-As a Salesforce admin I want to synchronize Leads between two Salesforce orgs.
+As a Marketo admin I want to synchronize Leads between Marketo and Salesforce orgs.
 
-This Anypoint Template should serve as a foundation for setting an online sync of Leads from one SalesForce instance to another. Every time there is a new Lead or a change in an already existing one, the integration will poll for changes in SalesForce source instance and it will be responsible for updating the Lead on the target org.
+This Anypoint Template should serve as a foundation for setting an online sync of Leads from Marketo instance to another Salesforce instances. Every time there is a new Lead or a change in an already existing one, the integration will poll for changes in Marketo source instance and it will be responsible for updating the Lead on the target orgs.
 
 Requirements have been set not only to be used as examples, but also to establish a starting point to adapt your integration to your requirements.
 
 As implemented, this Anypoint Template leverage the [Batch Module](http://www.mulesoft.org/documentation/display/current/Batch+Processing).
 The batch job is divided in Input, Process and On Complete stages.
+
+The integration is triggered by a poll defined in the endpoints file. The application queries/receives newest Marketo updates/creations and adds them to one of the JMS topics depending on the country for the Lead record.
+
+The application has two different batch jobs consuming this JMS topics, one for migrating the changes to the first Salesforce Org (Leads located in 'US') and the other one for migrating the changes to the other Salesforce Org (Leads located in other countries as 'US').
+
 During the Input stage the Anypoint Template will go to the SalesForce Org A and query all the existing Leads that match the filter criteria.
-During the Process stage, each SalesForce Lead will be filtered depending on, if it has an existing matching Lead in the SalesForce Org B.
-The last step of the Process stage will group the Leads and create/update them in SalesForce Org B.
+During the Process stage, each SalesForce Lead will be filtered depending on, if it has an existing matching Lead in the SalesForce Org.
+The last step of the Process stage will group the Leads and create/update them in SalesForce Org.
 Finally during the On Complete stage the Anypoint Template will log output statistics data into the console.
 
 # Considerations <a name="considerations"/>
@@ -77,7 +82,7 @@ There are no particular considerations for this Anypoint Template regarding Sale
 
 
 # Run it! <a name="runit"/>
-Simple steps to get Salesforce to Salesforce Lead Broadcast running.
+Simple steps to get Marketo to Salesforce Lead Broadcast running.
 See below.
 
 ## Running on premise <a name="runonopremise"/>
@@ -131,7 +136,7 @@ In order to use this Mule Anypoint Template you need to configure properties (Cr
 ### Application configuration
 + polling.frequency `60000`
 + poll.startDelayMillis `0`
-+ watermark.defaultExpression `YESTERDAY`
++ watermark.defaultExpression `#[groovy: new Date(System.currentTimeMillis()).format(\"yyyy-MM-dd'T'HH:mm:ss\", TimeZone.getTimeZone('UTC'))]`
 + page.size `200`
 
 + owner.sync.policy `syncOwner`
@@ -139,7 +144,7 @@ In order to use this Mule Anypoint Template you need to configure properties (Cr
 **Note:** the property **owner.sync.policy** can take any of the two following values: 
 
 + **empty_value**: if the propety has no value assigned to it then application will do nothing in what respect to the lead and it'll just move the lead over.
-+ **syncOwner**: it will try to create the lead's owner if there is no occurence in the Salesforce instance B.
++ **syncOwner**: it will try to create the lead's owner if there is no occurence in the Salesforce instance and the owner is specified in source Marketo instance.
 
 
 #### SalesForce Connector configuration for company A
@@ -155,6 +160,11 @@ In order to use this Mule Anypoint Template you need to configure properties (Cr
 + sfdc.b.url `https://login.salesforce.com/services/Soap/u/32.0`
  
 + sfdc.b.user.profile.id `00a21000001UzDr`
+
+#### Marketo Connector configuration 
++ mkto.clientId `clientReachPointId`
++ mkto.clientSecret `clientReachPointSecret`
++ mkto.endpointUrl `clientRestEndpointUrl`
 
 # API Calls <a name="apicalls"/>
 Salesforce imposes limits on the number of API Calls that can be made. Therefore calculating this amount may be an important factor to consider. The Anypoint template calls to the API can be calculated using the formula:
@@ -188,17 +198,20 @@ In the visual editor they can be found on the *Global Element* tab.
 
 
 ## businessLogic.xml<a name="businesslogicxml"/>
-Functional aspect of the Anypoint Template is implemented on this XML, directed by a batch job that will be responsible for creations/updates. The severeal message processors constitute four high level actions that fully implement the logic of this Anypoint Template:
+Functional aspect of the Anypoint Template is implemented in this XML, directed by mainFlow, which deduplicate the Lead IDs, create two separate collections depending on the Lead country field and send them through two different topics for futher processing.
+Flows processAQueueLeadsToBatchFlow and processBQueueLeadsToBatchFlow get data from specific JMS topic and start executing specific batch.
+There are two batches. Both have same logic, but the first is upserting Leads into Salesforce instance A and the other one into Salesforce instance B. 
 
-1. Job execution is invoked from triggerFlow (inboundEndpoints.xml) everytime there is a new query executed asking for created/updated Leads.
-2. During the Process stage, each SalesForce Lead will be filtered depending on, if it has an existing matching Lead in the SalesForce Org B.
-3. The last step of the Process stage will group the Leads and create/update them in SalesForce Org B.
-Finally during the On Complete stage the Anypoint Template will logoutput statistics data into the console.
+The logic of the batches is:
+
+1. During the Process stage, each SalesForce Lead will be filtered depending on, if it has an existing matching Lead in particular SalesForce Org.
+2. The last step of the Process stage will group the Leads and create/update them in particular SalesForce Org.
+3. Finally during the On Complete stage the batches will log output statistics data into the console.
 
 
 
 ## endpoints.xml<a name="endpointsxml"/>
-This is file is conformed by a Flow containing the Poll that will periodically query Salesforce for updated/created Leads that meet the defined criteria in the query. And then executing the batch job process with the query results.
+This is file is conformed by a Flow containing the Poll that will periodically query Marketo for updated/created fields - firstName,lastName,email,company,country,sfdcLeadOwnerId of Leads objects and then executing the mainFlow implemented in businessLogic.xml.
 
 
 
