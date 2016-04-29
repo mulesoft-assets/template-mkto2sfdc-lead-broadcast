@@ -136,7 +136,7 @@ In order to use this Mule Anypoint Template you need to configure properties (Cr
 ### Application configuration
 + polling.frequency `60000`
 + poll.startDelayMillis `0`
-+ watermark.defaultExpression `#[groovy: new Date(System.currentTimeMillis()).format(\"yyyy-MM-dd'T'HH:mm:ss\", TimeZone.getTimeZone('UTC'))]`
++ watermark.defaultExpression `#[groovy: new Date(System.currentTimeMillis()).format(\"yyyy-MM-dd'T'HH:mm:ss'Z'\", TimeZone.getTimeZone('UTC'))]`
 + page.size `200`
 
 + owner.sync.policy `syncOwner`
