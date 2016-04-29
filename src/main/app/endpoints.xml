@@ -32,15 +32,13 @@ Here you should not:
 ---
 payload map {
 	Id: $.leadId,
-	ActivityDate: $.activityDate as :string {format: "yyyy-MM-dd'T'HH:mm:ss"}
+	ActivityDate: (($.activityDate as :datetime)+ |PT1S|) as :string {format: "yyyy-MM-dd'T'HH:mm:ss'Z'"}
 }]]></dw:set-payload>
                 </dw:transform-message>
 
             </processor-chain>
         </poll>
         <flow-ref name="mainFlow" doc:name="Call mainFlow"/>
-        
-
     </flow>
 
 </mule>
