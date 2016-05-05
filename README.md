@@ -139,14 +139,6 @@ In order to use this Mule Anypoint Template you need to configure properties (Cr
 + watermark.defaultExpression `#[groovy: new Date(System.currentTimeMillis()).format(\"yyyy-MM-dd'T'HH:mm:ss'Z'\", TimeZone.getTimeZone('UTC'))]`
 + page.size `200`
 
-+ owner.sync.policy `syncOwner`
-
-**Note:** the property **owner.sync.policy** can take any of the two following values: 
-
-+ **empty_value**: if the propety has no value assigned to it then application will do nothing in what respect to the lead and it'll just move the lead over.
-+ **syncOwner**: it will try to create the lead's owner if there is no occurence in the Salesforce instance and the owner is specified in source Marketo instance.
-
-
 #### SalesForce Connector configuration for company A
 + sfdc.a.username `bob.dylan@orga`
 + sfdc.a.password `DylanPassword123`
@@ -158,8 +150,6 @@ In order to use this Mule Anypoint Template you need to configure properties (Cr
 + sfdc.b.password `JoanBaez456`
 + sfdc.b.securityToken `ces56arl7apQs56XTddf34X`
 + sfdc.b.url `https://login.salesforce.com/services/Soap/u/32.0`
- 
-+ sfdc.b.user.profile.id `00a21000001UzDr`
 
 #### Marketo Connector configuration 
 + mkto.clientId `clientReachPointId`
@@ -211,7 +201,7 @@ The logic of the batches is:
 
 
 ## endpoints.xml<a name="endpointsxml"/>
-This is file is conformed by a Flow containing the Poll that will periodically query Marketo for updated/created fields - firstName,lastName,email,company,country,sfdcLeadOwnerId of Leads objects and then executing the mainFlow implemented in businessLogic.xml.
+This is file is conformed by a Flow containing the Poll that will periodically query Marketo for updated/created fields - firstName,lastName,email,company,country of Leads objects and then executing the mainFlow implemented in businessLogic.xml.
 
 
 

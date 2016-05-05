@@ -38,10 +38,6 @@
 						</inclusion>
 						<inclusion>
 							<groupId>org.mule.modules</groupId>
-							<artifactId>marketo-connector</artifactId>
-						</inclusion>
-						<inclusion>
-							<groupId>org.mule.modules</groupId>
 							<artifactId>mule-module-marketo</artifactId>
 						</inclusion>
 					</inclusions>
@@ -51,15 +47,23 @@
 	</build>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-all</artifactId>
-			<version>5.9.0</version>
-		</dependency>
+
 		<dependency>
 			<groupId>org.mule.modules</groupId>
 			<artifactId>mule-module-sfdc</artifactId>
 			<version>${sfdc.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-module-spring-config</artifactId>
+			<version>${mule.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-module-http</artifactId>
+			<version>${mule.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.mulesoft.weave</groupId>
@@ -69,13 +73,13 @@
 		</dependency>
 		<dependency>
 			<groupId>org.mule.modules</groupId>
-			<artifactId>marketo-connector</artifactId>
-			<version>2.0.0-SNAPSHOT</version>
+			<artifactId>mule-module-marketo</artifactId>
+			<version>2.0.0</version>
 		</dependency>
 		<dependency>
-			<groupId>org.mule.modules</groupId>
-			<artifactId>mule-module-marketo</artifactId>
-			<version>2.0.0-SNAPSHOT</version>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-all</artifactId>
+			<version>5.9.0</version>
 		</dependency>
 	</dependencies>
 
@@ -101,15 +105,6 @@
 			</url>
 			<layout>default</layout>
 		</repository>
-		<repository>
-			<id>mule-ee-snapshots</id>
-			<name>MuleEE Snapshots Repository</name>
-			<url>https://repository-master.mulesoft.org/nexus/content/repositories/ci-snapshots/
-			</url>
-		</repository>
 	</repositories>
 
-	<properties>
-		<mule.version>3.7.3</mule.version>
-	</properties>
 </project>
