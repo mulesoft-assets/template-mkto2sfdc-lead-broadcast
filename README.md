@@ -5,6 +5,7 @@
 + [Use Case](#usecase)
 + [Considerations](#considerations)
 	* [Salesforce Considerations](#salesforceconsiderations)
+	* [Marketo Considerations](#marketoconsiderations)
 + [Run it!](#runit)
 	* [Running on premise](#runonopremise)
 	* [Running on Studio](#runonstudio)
@@ -80,6 +81,12 @@ There are no particular considerations for this Anypoint Template regarding Sale
 
 
 
+
+## Marketo Considerations <a name="marketoconsiderations"/>
+
+### As source of data
+
+There are no particular considerations for this Anypoint Template regarding Marketo as data origin.
 
 # Run it! <a name="runit"/>
 Simple steps to get Marketo to Salesforce Lead Broadcast running.
