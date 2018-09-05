@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+    xmlns:marketo="http://www.mulesoft.org/schema/mule/marketo" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+    xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/marketo http://www.mulesoft.org/schema/mule/marketo/current/mule-marketo.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+
+    <flow name="businessLogicFlow" doc:id="8759532e-79b7-4789-990c-dc8e162bfd67">
+        <ee:transform doc:name="Filter IDs duplicates and create otherCountries and usCountry variables" doc:id="cdb7755f-c020-4ac5-9002-9f365166615a">
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload distinctBy $.Id]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="usCountry" ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+				<ee:set-variable variableName="otherCountries" ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="f40abf1e-9f7a-4316-8996-10f5e000fbeb" collection="payload">
+			<marketo:get-lead-by-id doc:name="Get Lead by Id from Marketo" doc:id="42d9284b-604e-46bb-adf3-82be85d63a38" config-ref="Marketo_Config" lead-id="#[payload.Id]"/>
+			<ee:transform doc:name="Transform response to SFDC Lead fields" doc:id="dc748bff-9bb5-4824-b138-3e3bc28a5cde" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+var result = payload.result[0]
+---
+{
+	Email: result.email,
+	FirstName: result.firstName,
+	LastName: result.lastName,
+	Country: result.country,
+	Company: result.firstName ++ " " ++ result.lastName
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<choice doc:name="Is country 'US'?" doc:id="348da3d9-b5d6-42b6-9048-d9916faaa4fb" >
+				<when expression='#[payload.Country != null and payload.Country.equals("US")]' >
+					<ee:transform doc:name="Add Lead to us Country list" doc:id="31d174ed-8d91-484e-b6d5-ac4eefa1ab64" >
+						<ee:message >
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="usCountry" ><![CDATA[%dw 2.0
+output application/java
+---
+vars.usCountry + payload]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</when>
+				<otherwise >
+					<ee:transform doc:name="Add Lead to otherCountries list" doc:id="e5ea9050-e009-4d15-9257-f5ec39f60601" >
+						<ee:message >
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="otherCountries" ><![CDATA[%dw 2.0
+output application/java
+---
+vars.otherCountries + payload]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</otherwise>
+			</choice>
+		</foreach>
+		<ee:transform doc:name="Set Payload with usContry list" doc:id="b7988793-2028-4221-b35f-72695f1f1e2f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.usCountry]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<jms:publish doc:name="JMS - Topic A" doc:id="aae4ea2f-20d4-4345-ae21-eef9a67ed28f" config-ref="ActiveMQ" destination="A" destinationType="TOPIC"/>
+		<ee:transform doc:name="Set Payload with otherCountries list" doc:id="8fda5ca3-0489-4266-bcea-ad60e99e4fed" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.otherCountries]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<jms:publish doc:name="JMS - Topic B" doc:id="2f0b2741-1117-4ccf-9792-58db543ca269" config-ref="ActiveMQ" destination="B" destinationType="TOPIC" />
+    </flow>
+	<flow name="processAQueueLeadsToBatchFlow" doc:id="51714819-fe59-46bd-9afa-49ec26a1ce19" >
+		<jms:listener doc:name="JMS - Topic A" doc:id="1082263f-92ce-4455-8ff6-c48a359c2f91" config-ref="ActiveMQ" destination="A" numberOfConsumers="1">
+			<jms:consumer-type >
+				<jms:topic-consumer />
+			</jms:consumer-type>
+		</jms:listener>
+		<logger level="INFO" doc:name="Log the topic A" doc:id="deab2173-d494-4a4e-b107-a301343444d0" message="Topic A is: #[payload]"/>
+		<batch:job jobName="broadcastLeadABatchJob" doc:id="94164e41-48ac-4f6d-af79-c41ee2633260" >
+			<batch:process-records >
+				<batch:step name="getLeadInSfdcInstanceAStep" doc:id="f62fac8a-4e11-45fc-9fb3-cea61e5b8231" >
+					<salesforce:query-single doc:name="Query Lead from Salesforce Instance A" doc:id="2501fc32-7aed-42ba-af55-97ad5dde9316" config-ref="Salesforce_Config_A" target="sfdcLead">
+						<salesforce:salesforce-query >SELECT Id FROM Lead WHERE Email = ':email'</salesforce:salesforce-query>
+						<salesforce:parameters ><![CDATA[#[output applicaton/java
+---
+{
+	"email" : payload.Email
+}]]]></salesforce:parameters>
+					</salesforce:query-single>
+					<ee:transform doc:name="Set Id to payload" doc:id="78e3ac27-ba52-4308-9164-77a8d2f17c03" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload ++ {
+	"Id" : if (vars.sfdcLead != null) vars.sfdcLead.Id else null
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</batch:step>
+				<batch:step name="upsertLeadInSfdcInstanceAStep" doc:id="f57564c9-8947-480c-b3eb-98e6952f48a4" >
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="4fbd3a92-2e97-46b1-aa3c-d02aaaedebb1" size="${page.size}">
+						<logger level="INFO" doc:name="Log 'Lead objects to update/create'" doc:id="4107b0e9-6966-4841-8514-0c5d64698ddf" message="Leads to update/create in batch A: #[payload]"/>
+						<salesforce:upsert-bulk doc:name="Upsert Leads in Salesforce Instance A" doc:id="ac82c6bc-11c1-49bf-9685-096b660da76d" config-ref="Salesforce_Config_A" type="Lead" externalIdFieldName="Id"/>
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+            <batch:on-complete >
+                <ee:transform doc:name="Prepare migration result" doc:id="0833bdea-b0de-4912-b33b-72a8b4b3c556" >
+                    <ee:message >
+                        <ee:set-payload ><![CDATA[%dw 2.0
+output text/plain
+---
+"The Batch A job report: \n"
+
+++ "\n Time [milliseconds]: "       ++ payload.elapsedTimeInMillis
+++ "\n Total Records: "             ++ payload.totalRecords
+++ "\n Successful Records: "        ++ payload.successfulRecords
+++ "\n Failed Records: "            ++ payload.failedRecords
+++ "\n Loaded Records: "            ++ payload.loadedRecords
+++ "\n Processed Records: "         ++ payload.processedRecords]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+                <logger level="INFO" doc:name="The Batch A job has finished!" doc:id="29466232-fee5-4267-863a-bffefe2a9130" message="The Batch A job has finished: #[payload]" />
+            </batch:on-complete>
+		</batch:job>
+	</flow>
+	<flow name="processBQueueLeadsToBatchFlow" doc:id="47a843c6-203b-4a8f-b0b0-11bbbd3a18ff" >
+		<jms:listener doc:name="JMS - Topic B" doc:id="7c1748d1-0771-44a4-a4c3-412da6f8d4db" config-ref="ActiveMQ" destination="B" numberOfConsumers="1" >
+			<jms:consumer-type >
+				<jms:topic-consumer />
+			</jms:consumer-type>
+		</jms:listener>
+		<logger level="INFO" doc:name="Log the topic B" doc:id="b9022978-55fe-49e8-9344-5e1ea2a46433" message="Topic B is: #[payload]" />
+		<batch:job jobName="broadcastLeadBBatchJob" doc:id="a23cbd66-e315-4baa-85f9-14a2fb853779" >
+			<batch:process-records >
+				<batch:step name="getLeadInSfdcInstanceBStep" doc:id="c0ca3db2-c73e-4d1d-b570-1d048c97cf0d" >
+					<salesforce:query-single doc:name="Query Lead from Salesforce Instance B" doc:id="2694c0a0-1659-4c11-9835-8a5de30d26ba" config-ref="Salesforce_Config_B" target="sfdcLead" >
+						<salesforce:salesforce-query >SELECT Id FROM Lead WHERE Email = ':email'</salesforce:salesforce-query>
+						<salesforce:parameters ><![CDATA[#[output applicaton/java
+---
+{
+	"email" : payload.Email
+}]]]></salesforce:parameters>
+					</salesforce:query-single>
+					<ee:transform doc:name="Set Id to payload" doc:id="4f276a4d-07ea-48c7-a91c-da699d97b443" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload ++ {
+	"Id" : if (vars.sfdcLead != null) vars.sfdcLead.Id else null
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</batch:step>
+				<batch:step name="upsertLeadInSfdcInstanceBStep" doc:id="fa159009-25e7-436d-b2ce-ca0f48d9f710" >
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="b050655c-90bc-4b2e-8750-89a283458cfc" size="${page.size}" >
+						<logger level="INFO" doc:name="Log 'Lead objects to update/create'" doc:id="e4be4bf3-dffc-4a55-9a97-2d29ba5e1ac1" message="Leads to update/create in batch B: #[payload]" />
+					    <salesforce:upsert-bulk doc:name="Upsert Leads in Salesforce Instance B" doc:id="ac82c6bc-11c1-49bf-9685-096b660da76d" config-ref="Salesforce_Config_B" externalIdFieldName="Id" type="Lead"/>
+                    </batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<ee:transform doc:name="Prepare migration result" doc:id="974828c2-8bc4-45ab-94ee-1af3bb5743e4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output text/plain
+---
+"The Batch B job report: \n"
+
+++ "\n Time [milliseconds]: "       ++ payload.elapsedTimeInMillis
+++ "\n Total Records: "             ++ payload.totalRecords
+++ "\n Successful Records: "        ++ payload.successfulRecords
+++ "\n Failed Records: "            ++ payload.failedRecords
+++ "\n Loaded Records: "            ++ payload.loadedRecords
+++ "\n Processed Records: "         ++ payload.processedRecords]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="The Batch B job has finished!" doc:id="e604a42e-5a2f-4cec-aedb-42ac8dc4e7e3" message="The Batch B job has finished: #[payload]" />
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+
+</mule>
+
+
+        

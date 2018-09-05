@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:marketo="http://www.mulesoft.org/schema/mule/marketo" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+    xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+    xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd 
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/marketo http://www.mulesoft.org/schema/mule/marketo/current/mule-marketo.xsd">
+
+    <os:object-store name="watermarkStore" doc:name="Object store" persistent="false" />
+
+    <configuration-properties doc:name="Configuration properties" doc:id="7584fb1d-2fa2-445a-b949-eed01f5785bd"
+        file="common.properties" />
+    <configuration-properties doc:name="Configuration properties" doc:id="86e0eb9d-cf2e-451a-9e09-b4afdf13e0e9"
+        file="mule.${mule.env}.properties" />
+    <configuration-properties doc:name="Configuration properties" doc:id="0abdf143-d5d1-4168-bdbd-7e3722442725"
+        file="mule-artifact.properties" />
+    <global-property doc:name="Global Property" name="mule.env" value="dev" />
+
+    <salesforce:sfdc-config name="Salesforce_Config_A" doc:name="Salesforce Config" doc:id="83702f7c-b0f5-4bce-b0a1-c63721640bfd">
+        <salesforce:basic-connection password="${sfdc.a.password}" securityToken="${sfdc.a.securityToken}"
+            username="${sfdc.a.username}">
+            <pooling-profile />
+        </salesforce:basic-connection>
+    </salesforce:sfdc-config>
+
+    <salesforce:sfdc-config name="Salesforce_Config_B" doc:name="Salesforce Config" doc:id="83702f7c-b0f5-4bce-b0a1-c63721640bfd">
+        <salesforce:basic-connection password="${sfdc.b.password}" securityToken="${sfdc.b.securityToken}"
+            username="${sfdc.b.username}">
+            <pooling-profile />
+        </salesforce:basic-connection>
+    </salesforce:sfdc-config>
+
+    <marketo:config name="Marketo_Config" doc:name="Marketo Config" doc:id="8dc4ffb4-5c97-478f-b393-d524cb985299"
+        property_basePath="${mkto.basePath}" property_clientId="${mkto.clientId}" property_clientSecret="${mkto.clientSecret}"
+        property_host="${mkto.host}" property_accessTokenUrl="${mkto.accessTokenUrl}" />
+
+    <jms:config name="ActiveMQ" doc:name="JMS Config" doc:id="5411c616-8b37-48d4-b875-2025440eef69">
+        <jms:active-mq-connection username="${jms.username}" password="${jms.password}">
+            <jms:caching-strategy>
+                <jms:default-caching />
+            </jms:caching-strategy>
+            <jms:factory-configuration brokerUrl="${jms.brokerUrl}" maxRedelivery="2" />
+        </jms:active-mq-connection>
+        <jms:consumer-config>
+            <jms:consumer-type>
+                <jms:topic-consumer />
+            </jms:consumer-type>
+        </jms:consumer-config>
+    </jms:config>
+</mule>
+
+        
