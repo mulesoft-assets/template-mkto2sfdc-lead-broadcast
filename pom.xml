@@ -33,7 +33,7 @@
                             <artifactId>activemq-all</artifactId>
                         </sharedLibrary>
                     </sharedLibraries>
-                    <classifier>mule-application</classifier>
+                    <classifier>mule-application-template</classifier>
                 </configuration>
             </plugin>
         </plugins>
