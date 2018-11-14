@@ -136,12 +136,12 @@ output text/plain
 ---
 "The Batch A job report: \n"
 
-++ "\n Time [milliseconds]: "       ++ payload.elapsedTimeInMillis
-++ "\n Total Records: "             ++ payload.totalRecords
-++ "\n Successful Records: "        ++ payload.successfulRecords
-++ "\n Failed Records: "            ++ payload.failedRecords
-++ "\n Loaded Records: "            ++ payload.loadedRecords
-++ "\n Processed Records: "         ++ payload.processedRecords]]></ee:set-payload>
+++ "\n Time [milliseconds]: "       ++ payload.elapsedTimeInMillis!
+++ "\n Total Records: "             ++ payload.totalRecords!
+++ "\n Successful Records: "        ++ payload.successfulRecords!
+++ "\n Failed Records: "            ++ payload.failedRecords!
+++ "\n Loaded Records: "            ++ payload.loadedRecords!
+++ "\n Processed Records: "         ++ payload.processedRecords!]]></ee:set-payload>
                     </ee:message>
                 </ee:transform>
                 <logger level="INFO" doc:name="The Batch A job has finished!" doc:id="29466232-fee5-4267-863a-bffefe2a9130" message="The Batch A job has finished: #[payload]" />
@@ -192,12 +192,12 @@ output text/plain
 ---
 "The Batch B job report: \n"
 
-++ "\n Time [milliseconds]: "       ++ payload.elapsedTimeInMillis
-++ "\n Total Records: "             ++ payload.totalRecords
-++ "\n Successful Records: "        ++ payload.successfulRecords
-++ "\n Failed Records: "            ++ payload.failedRecords
-++ "\n Loaded Records: "            ++ payload.loadedRecords
-++ "\n Processed Records: "         ++ payload.processedRecords]]></ee:set-payload>
+++ "\n Time [milliseconds]: "       ++ payload.elapsedTimeInMillis!
+++ "\n Total Records: "             ++ payload.totalRecords!
+++ "\n Successful Records: "        ++ payload.successfulRecords!
+++ "\n Failed Records: "            ++ payload.failedRecords!
+++ "\n Loaded Records: "            ++ payload.loadedRecords!
+++ "\n Processed Records: "         ++ payload.processedRecords!]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
 				<logger level="INFO" doc:name="The Batch B job has finished!" doc:id="e604a42e-5a2f-4cec-aedb-42ac8dc4e7e3" message="The Batch B job has finished: #[payload]" />
