@@ -1,22 +1,18 @@
 <?xml version='1.0' encoding='utf-8'?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>org.mule.templates</groupId>
         <artifactId>templates-tooling-parent-pom</artifactId>
         <version>2.1.10</version>
     </parent>
-
     <artifactId>template-mkto2sfdc-lead-broadcast</artifactId>
     <packaging>mule-application</packaging>
     <version>2.1.0-SNAPSHOT</version>
     <name>template-mkto2sfdc-lead-broadcast</name>
-
     <properties>
         <activemq.version>5.10.0</activemq.version>
     </properties>
-
     <build>
         <plugins>
             <plugin>
@@ -36,7 +32,6 @@
             </plugin>
         </plugins>
     </build>
-
     <dependencies>
         <dependency>
             <groupId>com.mulesoft.connectors</groupId>
@@ -65,7 +60,6 @@
             <classifier>mule-plugin</classifier>
         </dependency>
     </dependencies>
-    
     <repositories>
         <repository>
             <id>anypoint-exchange</id>
