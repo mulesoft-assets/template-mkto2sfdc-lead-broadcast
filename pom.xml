@@ -12,6 +12,7 @@
     <name>template-mkto2sfdc-lead-broadcast</name>
     <properties>
         <activemq.version>5.10.0</activemq.version>
+        <mkto.version>3.0.0</mkto.version>
     </properties>
     <build>
         <plugins>
