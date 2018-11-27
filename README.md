@@ -11,11 +11,11 @@ This template is subject to the conditions of the <a href="https://s3.amazonaws.
 <!-- Use Case (start) -->
 As a Marketo admin I want to synchronize Leads between Marketo and Salesforce orgs.
 
-This Anypoint Template should serve as a foundation for setting an online sync of Leads from Marketo instance to another Salesforce instances. Every time there is a new Lead or a change in an already existing one, the integration will poll for changes in Marketo source instance and it will be responsible for updating the Lead on the target orgs.
+This Anypoint template serves as a foundation for setting an online sync of Leads from Marketo instance to another Salesforce instances. Every time there is a new Lead or a change in an already existing one, the integration will poll for changes in Marketo source instance and it will be responsible for updating the Lead on the target orgs.
 
 Requirements have been set not only to be used as examples, but also to establish a starting point to adapt your integration to your requirements.
 
-As implemented, this Anypoint Template leverages the [Batch Module](http://www.mulesoft.org/documentation/display/current/Batch+Processing).
+As implemented, this template leverages the Mule batch module.
 The batch job is divided in *Process* and *On Complete* stages.
 
 The integration is triggered by a scheduler defined in the endpoints.xml file. The application queries/receives newest Marketo updates/creations and adds them to one of the JMS topics depending on the country for the Lead record.
@@ -23,8 +23,8 @@ The integration is triggered by a scheduler defined in the endpoints.xml file. T
 The application has two different batch jobs consuming this JMS topics, one for migrating the changes to the first Salesforce Org (Leads located in 'US') and the other one for migrating the changes to the other Salesforce Org (Leads located in other countries as 'US').
 
 During the *Process* stage, each Salesforce Lead will be matched with an existing Lead in the target system by Email.
-The last step of the *Process* stage will group the Leads and create/update them in Salesforce Org.
-Finally during the *On Complete* stage the Anypoint Template will log output statistics data into the console.
+The last step of the *Process* stage groups the Leads and create/update them in Salesforce Org.
+Finally during the *On Complete* stage the template logs output statistics data into the console.
 <!-- Use Case (end) -->
 
 # Considerations
@@ -33,7 +33,7 @@ Finally during the *On Complete* stage the Anypoint Template will log output sta
 <!-- Default Considerations (end) -->
 
 <!-- Considerations (start) -->
-To make this Anypoint Template run, there are certain preconditions that must be considered. All of them deal with the preparations in both source and destination systems, that must be made in order for all to run smoothly. **Failing to do so could lead to unexpected behavior of the template.**
+To make this template run, there are certain preconditions that must be considered. All of them deal with the preparations in both source and destination systems, that must be made for the template to run smoothly. **Failing to do so could lead to unexpected behavior of the template.**
 <!-- Considerations (end) -->
 
 
@@ -141,14 +141,14 @@ To use this template, configure properties such as credentials, configurations, 
 + sfdc.b.password `JoanBaez456`
 + sfdc.b.securityToken `ces56arl7apQs56XTddf34X`
 
-**Marketo Connector configuration**
+**Marketo Connector Configuration**
 + mkto.clientId `clientReachPointId`
 + mkto.clientSecret `clientReachPointSecret`
 + mkto.basePath `/`
 + mkto.host `marketo.mktorest.com`
 + mkto.accessTokenUrl `https://marketo.mktorest.com/identity/oauth/token`
 
-**JMS Connector configuration**
+**JMS Connector Configuration**
 + jms.username `admin`
 + jms.password `admin`
 + jms.brokerUrl `tcp://localhost:61616`
@@ -187,15 +187,15 @@ This file provides the configuration for connectors and configuration properties
 
 ## businessLogic.xml
 <!-- Default Business Logic XML (start) -->
-Functional aspect of the Anypoint Template is implemented in this XML, directed by mainFlow, which deduplicates Leads by Id, create two separate collections depending on the Lead's country field and send them through two different topics for further processing.
+Functional aspect of the template is implemented in this XML, directed by mainFlow, which deduplicates Leads by Id, create two separate collections depending on the Lead's country field and send them through two different topics for further processing.
 Flows processAQueueLeadsToBatchFlow and processBQueueLeadsToBatchFlow get data from specific JMS topic and start executing specific batch.
 There are two batches. Both have same logic, but the first is upserting Leads into Salesforce instance A and the other one - into Salesforce instance B. 
 
 The logic of the batches is:
 
 1. During the *Process* stage, each Salesforce Lead will be matched with an existing Lead in the target system by Email.
-2. The last step of the *Process* stage will group the Leads and create/update them in particular Salesforce Org.
-3. Finally during the *On Complete* stage the batches will log output statistics data into the console.<!-- Default Business Logic XML (end) -->
+2. The last step of the *Process* stage groups the Leads and create/update them in particular Salesforce Org.
+3. Finally during the *On Complete* stage the batches logs output statistics data into the console.<!-- Default Business Logic XML (end) -->
 
 <!-- Business Logic XML (start) -->
 
