@@ -1,7 +1,18 @@
 
 # Anypoint Template: Marketo to Salesforce Lead Broadcast	
 
+
 <!-- Header (start) -->
+
+This template synchronizes leads from a Marketo instance to multiple Salesforce instances located in different regions. The integration polls changes from Marketo and routes leads to an appropriate Salesforce instance based on the lead location. For example, leads from EMEA only route to a Salesforce instance located in EMEA. 
+
+This template uses the publish-subscribe pattern, so anytime a new lead  or a change to an existing lead occurs, the integration publishes the changes to a JMS topic and each subscriber application updates records in the target system. 
+
+The template consists of two different batch processes that consume the JMS topic, and based on the location, routes the leads to either the Salesforce instance in North America or to EMEA. In addition, this template logs output data to the console to keep you informed of changes.
+
+![78af13b3-f2e4-4c5d-9982-c101c2115b9f-image.png](https://exchange2-file-upload-service-kprod.s3.us-east-1.amazonaws.com:443/78af13b3-f2e4-4c5d-9982-c101c2115b9f-image.png)
+
+[![YouTube Video](http://img.youtube.com/vi/GGjIa9_QT74/0.jpg)](https://www.youtube.com/watch?v=GGjIa9_QT74)
 
 <!-- Header (end) -->
 
@@ -9,22 +20,21 @@
 This template is subject to the conditions of the <a href="https://s3.amazonaws.com/templates-examples/AnypointTemplateLicense.pdf">MuleSoft License Agreement</a>. Review the terms of the license before downloading and using this template. You can use this template for free with the Mule Enterprise Edition, CloudHub, or as a trial in Anypoint Studio. 
 # Use Case
 <!-- Use Case (start) -->
-As a Marketo admin I want to synchronize Leads between Marketo and Salesforce orgs.
+As a Marketo admin I want to synchronize leads between Marketo and Salesforce organizations.
 
-This Anypoint template serves as a foundation for setting an online sync of Leads from Marketo instance to another Salesforce instances. Every time there is a new Lead or a change in an already existing one, the integration will poll for changes in Marketo source instance and it will be responsible for updating the Lead on the target orgs.
+This template provides an online sync of leads from a Marketo instance to a Salesforce instance. Each time a new lead or a change in an existing lead occurs, this integration polls for changes in the Marketo source instance and updates the lead in the target organization.
 
 Requirements have been set not only to be used as examples, but also to establish a starting point to adapt your integration to your requirements.
 
-As implemented, this template leverages the Mule batch module.
-The batch job is divided in *Process* and *On Complete* stages.
+This template leverages the Mule batch module. The batch job is divided in *Process* and *On Complete* stages.
 
-The integration is triggered by a scheduler defined in the endpoints.xml file. The application queries/receives newest Marketo updates/creations and adds them to one of the JMS topics depending on the country for the Lead record.
+The integration is triggered by a scheduler defined in the endpoints.xml file. The application queries and receives newest Marketo updates and creates and adds them to one of the JMS topics depending on the country for the lead record.
 
-The application has two different batch jobs consuming this JMS topics, one for migrating the changes to the first Salesforce Org (Leads located in 'US') and the other one for migrating the changes to the other Salesforce Org (Leads located in other countries as 'US').
+The application has two different batch jobs consuming JMS topics, one for migrating the changes to the first Salesforce organization (leads located in 'US') and the other for migrating the changes to the other Salesforce organization (leads located outside the 'US').
 
-During the *Process* stage, each Salesforce Lead will be matched with an existing Lead in the target system by Email.
-The last step of the *Process* stage groups the Leads and create/update them in Salesforce Org.
-Finally during the *On Complete* stage the template logs output statistics data into the console.
+During the *Process* stage, each Salesforce lead is matched with an existing lead in the target system by email.
+The last step of the *Process* stage groups the leads and creates or updates them in the Salesforce organization.
+Finally during the *On Complete* stage the template logs output statistics data to the console.
 <!-- Use Case (end) -->
 
 # Considerations
@@ -33,10 +43,8 @@ Finally during the *On Complete* stage the template logs output statistics data 
 <!-- Default Considerations (end) -->
 
 <!-- Considerations (start) -->
-To make this template run, there are certain preconditions that must be considered. All of them deal with the preparations in both source and destination systems, that must be made for the template to run smoothly. **Failing to do so could lead to unexpected behavior of the template.**
+To make this template run, there are certain preconditions that must be considered. All of them deal with the preparations in both source and destination systems, that must be made for the template to run smoothly. Failing to do so could lead to unexpected behavior of the template.
 <!-- Considerations (end) -->
-
-
 
 ## Salesforce Considerations
 
@@ -45,17 +53,9 @@ Here's what you need to know about Salesforce to get this template to work:
 - Where can I check that the field configuration for my Salesforce instance is the right one? See: <a href="https://help.salesforce.com/HTViewHelpDoc?id=checking_field_accessibility_for_a_particular_field.htm&language=en_US">Salesforce: Checking Field Accessibility for a Particular Field</a>.
 - Can I modify the Field Access Settings? How? See: <a href="https://help.salesforce.com/HTViewHelpDoc?id=modifying_field_access_settings.htm&language=en_US">Salesforce: Modifying Field Access Settings</a>.
 
-
 ### As a Data Destination
 
 There are no considerations with using Salesforce as a data destination.
-
-
-
-
-
-
-
 
 ## Marketo Considerations
 
@@ -107,8 +107,7 @@ After you import your template into Anypoint Studio, follow these steps to run i
 <!-- Running on Studio (end) -->
 
 ### Running on Mule Standalone
-Update the properties in one of the property files, for example in mule.prod.properties, and run your app with a corresponding environment variable. In this example, use `mule.env=prod`. 
-
+Update the properties in one of the property files, for example in `mule.prod.properties`, and run your app with a corresponding environment variable. In this example, use `mule.env=prod`.
 
 ## Running on CloudHub
 When creating your application in CloudHub, go to Runtime Manager > Manage Application > Properties to set the environment variables listed in "Properties to Configure" as well as the mule.env value.
@@ -156,15 +155,15 @@ To use this template, configure properties such as credentials, configurations, 
 
 # API Calls
 <!-- API Calls (start) -->
-Salesforce imposes limits on the number of API Calls that can be made. Therefore calculating this amount may be an important factor to consider. The Anypoint template calls to the API can be calculated using the formula:
+Salesforce imposes limits on the number of API calls that can be made. Therefore calculating this amount may be an important factor to consider. 
 
-***1 + X + X / ${page.size}***
+This template calls to the API can be calculated using this formula:
 
-Being ***X*** the number of Leads to be synchronized on each run. 
+***1 + X + X / ${page.size}*** -- ***X*** is the number of leads to synchronize on each run. 
 
-The division by ***${page.size}*** is because, by default, Leads are gathered in groups of ${page.size} for each Upsert API Call in the aggregation step. Also consider that these calls are executed repeatedly every polling cycle.	
+Divide by ***${page.size}*** because by default the leads are gathered in groups of ${page.size} for each Upsert API call in the aggregation step. Also consider that these calls are executed repeatedly every polling cycle.	
 
-For instance if 10 records are fetched from origin instance, then 12 api calls will be made (1 + 10 + 1).
+For instance if 10 records are fetched from the origin instance, then 12 API calls are made (1 + 10 + 1).
 <!-- API Calls (end) -->
 
 # Customize It!
@@ -187,15 +186,17 @@ This file provides the configuration for connectors and configuration properties
 
 ## businessLogic.xml
 <!-- Default Business Logic XML (start) -->
-Functional aspect of the template is implemented in this XML, directed by mainFlow, which deduplicates Leads by Id, create two separate collections depending on the Lead's country field and send them through two different topics for further processing.
+Functional aspect of the template is implemented in this XML, directed by mainFlow, which deduplicates leads by Id, create two separate collections depending on the lead's country field and send them through two different topics for further processing.
 Flows processAQueueLeadsToBatchFlow and processBQueueLeadsToBatchFlow get data from specific JMS topic and start executing specific batch.
-There are two batches. Both have same logic, but the first is upserting Leads into Salesforce instance A and the other one - into Salesforce instance B. 
+There are two batches. Both have the same logic, but the first adds leads into Salesforce instance A and the other one adds leads to Salesforce instance B. 
 
-The logic of the batches is:
+The batch logic is:
 
-1. During the *Process* stage, each Salesforce Lead will be matched with an existing Lead in the target system by Email.
-2. The last step of the *Process* stage groups the Leads and create/update them in particular Salesforce Org.
-3. Finally during the *On Complete* stage the batches logs output statistics data into the console.<!-- Default Business Logic XML (end) -->
+1. During the *Process* stage, each Salesforce lead is matched with an existing lead in the target system by email.
+2. The *Process* stage groups the leads and creates or updates them in the Salesforce organization.
+3. During the *On Complete* stage, the batches logs output statistics data into the console.
+
+<!-- Default Business Logic XML (end) -->
 
 <!-- Business Logic XML (start) -->
 
@@ -203,7 +204,9 @@ The logic of the batches is:
 
 ## endpoints.xml
 <!-- Default Endpoints XML (start) -->
-This is file is conformed by a Flow containing the Scheduler that will periodically query Marketo for updated/created fields - firstName,lastName,email,company,country of Lead objects and then executing the mainFlow implemented in businessLogic.xml.<!-- Default Endpoints XML (end) -->
+This file contains a scheduler that periodically queries Marketo for updated or created fields - `firstName,lastName,email,company,country` of lead objects and then executes the mainFlow implemented in businessLogic.xml.
+
+<!-- Default Endpoints XML (end) -->
 
 <!-- Endpoints XML (start) -->
 
@@ -211,7 +214,9 @@ This is file is conformed by a Flow containing the Scheduler that will periodica
 
 ## errorHandling.xml
 <!-- Default Error Handling XML (start) -->
-This file handles how your integration reacts depending on the different exceptions. This file provides error handling that is referenced by the main flow in the business logic.<!-- Default Error Handling XML (end) -->
+This file handles how your integration reacts depending on the different exceptions. This file provides error handling that is referenced by the main flow in the business logic.
+
+<!-- Default Error Handling XML (end) -->
 
 <!-- Error Handling XML (start) -->
 
