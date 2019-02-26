@@ -29,7 +29,7 @@ http://www.mulesoft.org/schema/mule/marketo http://www.mulesoft.org/schema/mule/
             config-ref="Marketo_Config" since-datetime="#[vars.lastQueryTimestamp]" />
 		<marketo:get-lead-changes doc:name="Get Lead changes from Marketo" doc:id="02b063a9-1611-4de5-a1e9-ab5ba10a9fe6" config-ref="Marketo_Config" next-page-token="#[payload.nextPageToken]" fields='#["firstName,lastName,email,company,country"]'>
 		</marketo:get-lead-changes>
-        <ee:transform doc:name="Get Ids and ActiveDates from Marketo response" doc:id="caa12f95-5eb1-4d00-8ce3-5f8445967c19" >
+		<ee:transform doc:name="Get Ids and ActiveDates from Marketo response" doc:id="caa12f95-5eb1-4d00-8ce3-5f8445967c19" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/java
