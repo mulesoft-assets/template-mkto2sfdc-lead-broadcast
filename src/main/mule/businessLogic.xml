@@ -11,69 +11,7 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
 
     <flow name="businessLogicFlow" doc:id="8759532e-79b7-4789-990c-dc8e162bfd67">
-        <ee:transform doc:name="Filter IDs duplicates and create otherCountries and usCountry variables" doc:id="cdb7755f-c020-4ac5-9002-9f365166615a">
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
----
-payload distinctBy $.Id]]></ee:set-payload>
-			</ee:message>
-			<ee:variables >
-				<ee:set-variable variableName="usCountry" ><![CDATA[%dw 2.0
-output application/java
----
-[]]]></ee:set-variable>
-				<ee:set-variable variableName="otherCountries" ><![CDATA[%dw 2.0
-output application/java
----
-[]]]></ee:set-variable>
-			</ee:variables>
-		</ee:transform>
-		<foreach doc:name="For Each" doc:id="f40abf1e-9f7a-4316-8996-10f5e000fbeb" collection="payload">
-			<marketo:get-lead-by-id doc:name="Get Lead by Id from Marketo" doc:id="42d9284b-604e-46bb-adf3-82be85d63a38" config-ref="Marketo_Config" lead-id="#[payload.Id]" fields='#["firstName, lastName, country, email"]'>
-			</marketo:get-lead-by-id>
-			<ee:transform doc:name="Transform response to SFDC Lead fields" doc:id="dc748bff-9bb5-4824-b138-3e3bc28a5cde" >
-				<ee:message >
-					<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
-var result = payload.result[0]
----
-{
-	Email: result.email,
-	FirstName: result.firstName,
-	LastName: result.lastName,
-	Country: result.country,
-	Company: result.firstName ++ " " ++ result.lastName
-}]]></ee:set-payload>
-				</ee:message>
-			</ee:transform>
-			<choice doc:name="Is country 'US'?" doc:id="348da3d9-b5d6-42b6-9048-d9916faaa4fb" >
-				<when expression='#[payload.Country != null and payload.Country == "US"]' >
-					<ee:transform doc:name="Add Lead to us Country list" doc:id="31d174ed-8d91-484e-b6d5-ac4eefa1ab64" >
-						<ee:message >
-						</ee:message>
-						<ee:variables >
-							<ee:set-variable variableName="usCountry" ><![CDATA[%dw 2.0
-output application/java
----
-vars.usCountry + payload]]></ee:set-variable>
-						</ee:variables>
-					</ee:transform>
-				</when>
-				<otherwise >
-					<ee:transform doc:name="Add Lead to otherCountries list" doc:id="e5ea9050-e009-4d15-9257-f5ec39f60601" >
-						<ee:message >
-						</ee:message>
-						<ee:variables >
-							<ee:set-variable variableName="otherCountries" ><![CDATA[%dw 2.0
-output application/java
----
-vars.otherCountries + payload]]></ee:set-variable>
-						</ee:variables>
-					</ee:transform>
-				</otherwise>
-			</choice>
-		</foreach>
+		<flow-ref doc:name="Reference to businessLogicSubFlow" doc:id="0709bdc1-c38f-47e4-b0f4-3993619cd343" name="businessLogicSub_Flow"/>
 		<ee:transform doc:name="Set Payload with usContry list" doc:id="b7988793-2028-4221-b35f-72695f1f1e2f" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -93,6 +31,71 @@ vars.otherCountries]]></ee:set-payload>
 		</ee:transform>
 		<jms:publish doc:name="JMS - Topic B" doc:id="2f0b2741-1117-4ccf-9792-58db543ca269" config-ref="ActiveMQ" destination="B" destinationType="TOPIC" />
     </flow>
+	<sub-flow name="businessLogicSub_Flow" doc:id="297fed0d-12d5-43f9-8f09-f13bdcf0f019" >
+		<ee:transform doc:name="Filter IDs duplicates and create otherCountries and usCountry variables" doc:id="cdb7755f-c020-4ac5-9002-9f365166615a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload distinctBy $.Id]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="usCountry"><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+				<ee:set-variable variableName="otherCountries"><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="f40abf1e-9f7a-4316-8996-10f5e000fbeb" collection="payload">
+			<marketo:get-lead-by-id doc:name="Get Lead by Id from Marketo" doc:id="42d9284b-604e-46bb-adf3-82be85d63a38" config-ref="Marketo_Config" lead-id="#[payload.Id]" fields='#["firstName, lastName, country, email"]'>
+			</marketo:get-lead-by-id>
+			<ee:transform doc:name="Transform response to SFDC Lead fields" doc:id="dc748bff-9bb5-4824-b138-3e3bc28a5cde">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var result = payload.result[0]
+---
+{
+	Email: result.email,
+	FirstName: result.firstName,
+	LastName: result.lastName,
+	Country: result.country,
+	Company: result.firstName ++ " " ++ result.lastName
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<choice doc:name="Is country 'US'?" doc:id="348da3d9-b5d6-42b6-9048-d9916faaa4fb">
+				<when expression='#[payload.Country != null and payload.Country == "US"]'>
+					<ee:transform doc:name="Add Lead to us Country list" doc:id="31d174ed-8d91-484e-b6d5-ac4eefa1ab64">
+						<ee:message>
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="usCountry"><![CDATA[%dw 2.0
+output application/java
+---
+vars.usCountry + payload]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</when>
+				<otherwise>
+					<ee:transform doc:name="Add Lead to otherCountries list" doc:id="e5ea9050-e009-4d15-9257-f5ec39f60601">
+						<ee:message>
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="otherCountries"><![CDATA[%dw 2.0
+output application/java
+---
+vars.otherCountries + payload]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</otherwise>
+			</choice>
+		</foreach>
+	</sub-flow>
 	<flow name="processAQueueLeadsToBatchFlow" doc:id="51714819-fe59-46bd-9afa-49ec26a1ce19" >
 		<jms:listener doc:name="JMS - Topic A" doc:id="1082263f-92ce-4455-8ff6-c48a359c2f91" config-ref="ActiveMQ" destination="A" numberOfConsumers="1">
 			<jms:consumer-type >
