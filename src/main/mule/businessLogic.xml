@@ -30,7 +30,8 @@ output application/java
 			</ee:variables>
 		</ee:transform>
 		<foreach doc:name="For Each" doc:id="f40abf1e-9f7a-4316-8996-10f5e000fbeb" collection="payload">
-			<marketo:get-lead-by-id doc:name="Get Lead by Id from Marketo" doc:id="42d9284b-604e-46bb-adf3-82be85d63a38" config-ref="Marketo_Config" lead-id="#[payload.Id]"/>
+			<marketo:get-lead-by-id doc:name="Get Lead by Id from Marketo" doc:id="42d9284b-604e-46bb-adf3-82be85d63a38" config-ref="Marketo_Config" lead-id="#[payload.Id]" fields='#["firstName, lastName, country, email"]'>
+			</marketo:get-lead-by-id>
 			<ee:transform doc:name="Transform response to SFDC Lead fields" doc:id="dc748bff-9bb5-4824-b138-3e3bc28a5cde" >
 				<ee:message >
 					<ee:set-payload ><![CDATA[%dw 2.0
@@ -47,7 +48,7 @@ var result = payload.result[0]
 				</ee:message>
 			</ee:transform>
 			<choice doc:name="Is country 'US'?" doc:id="348da3d9-b5d6-42b6-9048-d9916faaa4fb" >
-				<when expression='#[payload.Country != null and payload.Country.equals("US")]' >
+				<when expression='#[payload.Country != null and payload.Country == "US"]' >
 					<ee:transform doc:name="Add Lead to us Country list" doc:id="31d174ed-8d91-484e-b6d5-ac4eefa1ab64" >
 						<ee:message >
 						</ee:message>

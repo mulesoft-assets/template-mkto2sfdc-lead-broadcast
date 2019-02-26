@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:marketo="http://www.mulesoft.org/schema/mule/marketo"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/marketo http://www.mulesoft.org/schema/mule/marketo/current/mule-marketo.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<munit:config name="test-suite.xml" />
+	<configuration-properties doc:name="Configuration properties" doc:id="62d4f9a7-e3bb-42de-a080-62ea09a3f7f4" file="mule.test.properties" />
+	<munit:before-test name="test-suiteBefore_Test" description="Before tests actions" doc:id="4768da8e-1786-4013-875c-e697c55927ea" >
+		<ee:transform doc:name="Prepare test data for Salesforce" doc:id="123aae41-c2fe-4490-849a-ca850c898e2c">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="testLeadSfdc1"><![CDATA[%dw 2.0
+output application/java
+var generateVal = randomInt(100000)
+---
+{
+	FirstName : "MUnitTestFirstName" ++ " " ++ generateVal,
+	LastName : "MUnitTestLastName" ++ " " ++ generateVal,
+	Company : "MUnitTestCompany",
+	Email : p('test.email.mkto.us')
+}]]></ee:set-variable>
+				<ee:set-variable variableName="testLeadSfdc2" ><![CDATA[%dw 2.0
+output application/java
+var generateVal = randomInt(100000)
+---
+{
+	FirstName : "MUnitTestFirstName" ++ " " ++ generateVal,
+	LastName : "MUnitTestLastName" ++ " " ++ generateVal,
+	Company : "MUnitTestCompany",
+	Email : p('test.email.mkto.ua')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<salesforce:create-multiple type="Lead" doc:name="Create test lead in Salesforce A" doc:id="9bfbe8b7-c56c-4d51-ad67-30c0932a4e93" config-ref="Salesforce_Config_A">
+			<salesforce:records ><![CDATA[#[[vars.testLeadSfdc1]]]]></salesforce:records>
+		</salesforce:create-multiple>
+		<salesforce:create-multiple type="Lead" doc:name="Create test lead in Salesforce B" doc:id="c7a20a33-6707-4120-937d-14e864f5d824" config-ref="Salesforce_Config_B">
+			<salesforce:records ><![CDATA[#[[vars.testLeadSfdc2]]]]></salesforce:records>
+		</salesforce:create-multiple>
+		<ee:transform doc:name="Prepare test data for Marketo" doc:id="90ef49a0-12cc-46e2-a5bd-cdea00440159" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "programName": "sdfdfd",
+    "input": [
+        {
+        	"firstName": p('test.firstName1'),
+        	"lastName" : p('test.lastName1'),
+            "email": p('test.email.mkto.us'),
+            "country": "US",
+            "company" : p('test.firstName1') ++ " " ++ p('test.lastName1') 
+         },
+         {
+         	"firstName": p('test.firstName2'),
+        	"lastName" : p('test.lastName2'),
+            "email": p('test.email.mkto.ua'),
+            "country": "UA",
+            "company" : p('test.firstName2') ++ " " ++ p('test.lastName2') 
+         }
+     ]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<marketo:push-to-marketo doc:name="Create test leads in Marketo" doc:id="287fc620-6313-479d-bd4b-93f7920f65e2" config-ref="Marketo_Config"/>
+		<set-variable value="#[payload.result]" doc:name="Store Ids of created leads in Marketo" doc:id="76b7c21b-6b68-4735-a652-5130950f08ee" variableName="createdLeadIds"/>
+	</munit:before-test>
+	<munit:test name="test-suiteTest" description="MUnit Test" doc:id="21b01add-f7cc-4ede-b50e-ca31659f024a" >
+		<munit:execution >
+			<flow-ref doc:name="Reference to queryFlow" doc:id="3c7ef8da-3dba-4e72-91f9-45691dee9927" name="queryFlow"/>
+			<ee:transform doc:name="Filter test records" doc:id="012f7bc4-e921-4a59-9052-33a202911e61">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload filter ($.Id == vars.createdLeadIds[0].id or $.Id == vars.createdLeadIds[1].id)]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<flow-ref doc:name="Reference to businessLogicFlow" doc:id="354976d2-64c8-441e-ad41-8f20f53a89d2" name="businessLogicFlow"/>
+			<flow-ref doc:name="Reference to processBQueueLeadsToBatchFlow" doc:id="6a953b69-605f-4681-bdf2-f3540bf449f5" name="processBQueueLeadsToBatchFlow" />
+			<ee:transform doc:name="Set Payload with usContry list" doc:id="e3bf9641-b932-43d0-9416-7937765d529d">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.usCountry]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<flow-ref doc:name="Reference to processAQueueLeadsToBatchFlow" doc:id="6a0635f3-4ef1-4744-959b-87d07101cea9" name="processAQueueLeadsToBatchFlow"/>
+			<scripting:execute engine="groovy" doc:id="fe4934da-7f72-4e8c-b17f-1287cae26c70" doc:name="Sleep for 30s until the processing is completed">
+				<scripting:code>sleep(30000)</scripting:code>
+			</scripting:execute>
+			<flow-ref doc:name="Reference to checkSalesforceSubFlow" doc:id="e3b0ec3f-330c-4464-a243-962f51d0e5ae" name="checkSalesforceSubFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that if name in Salesforce A was updated" doc:id="181a806e-d419-4fcb-ab69-66c7ca8b9558" expression="#[vars.sfdcLead1.Name]" is="#[MunitTools::equalTo(p('test.firstName1') ++ &quot; &quot; ++ p('test.lastName1'))]"/>
+			<munit-tools:assert-that doc:name="Assert that if name in Salesforce B was updated" doc:id="170bfd71-6b0d-425b-9d7b-e07e0cf915a7" expression="#[vars.sfdcLead2.Name]" is="#[MunitTools::equalTo(p('test.firstName2') ++ &quot; &quot; ++ p('test.lastName2'))]"/>
+		</munit:validation>
+	</munit:test>
+	<sub-flow name="checkSalesforceSubFlow" doc:id="8bf34987-c2df-4803-a667-a2252d25db01" >
+		<salesforce:query doc:name="Query to Salesforce A" doc:id="d515beaa-2d07-4b81-a946-0a5daa629069" config-ref="Salesforce_Config_A" target="sfdcLead1" targetValue="#[payload[0]]">
+				<salesforce:salesforce-query> SELECT Id,Name FROM Lead WHERE Email = ':email'</salesforce:salesforce-query>
+				<salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	"email" : vars.testLeadSfdc1.Email
+}]]]></salesforce:parameters>
+			</salesforce:query>
+		<salesforce:query doc:name="Query to Salesforce B" doc:id="efda588f-fd0f-401b-870e-64aaab3e2898" config-ref="Salesforce_Config_B" target="sfdcLead2" targetValue="#[payload[0]]">
+			<salesforce:salesforce-query >SELECT Id,Name FROM Lead WHERE
+                Email = ':email'</salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"email" : vars.testLeadSfdc2.Email
+}]]]></salesforce:parameters>
+		</salesforce:query>
+	</sub-flow>
+	<munit:after-test name="test-suiteAfter_Test" description="After tests actions" doc:id="9c6b6b58-62b0-4345-9716-8ebed1eb0021">
+		<ee:transform doc:name="Prepare request for delete test leads in Marketo" doc:id="eaa1d4cf-8f7a-41c9-ab19-ca264957278a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"input" : [
+		{
+			"id" : vars.createdLeadIds[0].id
+		},
+		{
+			"id" : vars.createdLeadIds[1].id
+		}
+	]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<marketo:delete-leads doc:name="Delete test leads" doc:id="1c71bd58-5180-4a76-950f-4cba8ddb8c3c" config-ref="Marketo_Config">
+		</marketo:delete-leads>
+		<salesforce:delete doc:name="Delete test lead in Salesforce A" doc:id="c8f5e567-9274-4782-bdcc-982dcacc5d65" config-ref="Salesforce_Config_A">
+			<salesforce:delete-ids><![CDATA[#[[vars.sfdcLead1.Id]]]]></salesforce:delete-ids>
+		</salesforce:delete>
+		<salesforce:delete doc:name="Delete test lead in Salesforce B" doc:id="9167f21f-7c91-45de-933c-d40907ab9897" config-ref="Salesforce_Config_B">
+			<salesforce:delete-ids ><![CDATA[#[[vars.sfdcLead2.Id]]]]></salesforce:delete-ids>
+		</salesforce:delete>
+	</munit:after-test>
+
+
+</mule>
