@@ -86,7 +86,7 @@ output application/java
 payload filter ($.Id == vars.createdLeadIds[0].id or $.Id == vars.createdLeadIds[1].id)]]></ee:set-payload>
 				</ee:message>
 			</ee:transform>
-			<flow-ref doc:name="Reference to businessLogicSubFlow" doc:id="354976d2-64c8-441e-ad41-8f20f53a89d2" name="businessLogicSub_Flow"/>
+			<flow-ref doc:name="Reference to businessLogicSubFlow" doc:id="354976d2-64c8-441e-ad41-8f20f53a89d2" name="businessLogicSubFlow"/>
 			<ee:transform doc:name="Set Payload with otherCountries list" doc:id="384ec270-c68d-4d15-a9b2-7cb3da32c01a">
 				<ee:message>
 					<ee:set-payload><![CDATA[%dw 2.0

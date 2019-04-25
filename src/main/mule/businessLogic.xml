@@ -11,7 +11,7 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
 
     <flow name="businessLogicFlow" doc:id="8759532e-79b7-4789-990c-dc8e162bfd67">
-		<flow-ref doc:name="Reference to businessLogicSubFlow" doc:id="0709bdc1-c38f-47e4-b0f4-3993619cd343" name="businessLogicSub_Flow"/>
+		<flow-ref doc:name="Reference to businessLogicSubFlow" doc:id="0709bdc1-c38f-47e4-b0f4-3993619cd343" name="businessLogicSubFlow"/>
 		<ee:transform doc:name="Set Payload with usContry list" doc:id="b7988793-2028-4221-b35f-72695f1f1e2f" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -31,7 +31,7 @@ vars.otherCountries]]></ee:set-payload>
 		</ee:transform>
 		<jms:publish doc:name="JMS - Topic B" doc:id="2f0b2741-1117-4ccf-9792-58db543ca269" config-ref="ActiveMQ" destination="B" destinationType="TOPIC" />
     </flow>
-	<sub-flow name="businessLogicSub_Flow" doc:id="297fed0d-12d5-43f9-8f09-f13bdcf0f019" >
+	<sub-flow name="businessLogicSubFlow" doc:id="297fed0d-12d5-43f9-8f09-f13bdcf0f019" >
 		<ee:transform doc:name="Filter IDs duplicates and create otherCountries and usCountry variables" doc:id="cdb7755f-c020-4ac5-9002-9f365166615a">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
@@ -210,6 +210,3 @@ output text/plain
 	</flow>
 
 </mule>
-
-
-        

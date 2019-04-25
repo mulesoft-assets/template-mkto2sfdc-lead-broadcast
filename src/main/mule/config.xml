@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ns5="http://www.mulesoft.org/schema/mule/marketo" xmlns:ns6="http://www.mulesoft.org/schema/mule/jms" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd http://www.mulesoft.org/schema/mule/marketo http://www.mulesoft.org/schema/mule/marketo/current/mule-marketo.xsd">
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:marketo="http://www.mulesoft.org/schema/mule/marketo" xmlns:ns6="http://www.mulesoft.org/schema/mule/jms" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd http://www.mulesoft.org/schema/mule/marketo http://www.mulesoft.org/schema/mule/marketo/current/mule-marketo.xsd">
 
     <global-property name="mule.env" value="dev" doc:name="Global Property" />
 
@@ -20,7 +20,7 @@
         </salesforce:basic-connection>
     </salesforce:sfdc-config>
 
-    <ns5:config name="Marketo_Config" property_accessTokenUrl="${mkto.accessTokenUrl}" property_basePath="${mkto.basePath}" property_clientId="${mkto.clientId}" property_clientSecret="${mkto.clientSecret}" property_host="${mkto.host}" doc:id="8dc4ffb4-5c97-478f-b393-d524cb985299" doc:name="Marketo Config" />
+    <marketo:config name="Marketo_Config" property_accessTokenUrl="${mkto.accessTokenUrl}" property_basePath="${mkto.basePath}" property_clientId="${mkto.clientId}" property_clientSecret="${mkto.clientSecret}" property_host="${mkto.host}" doc:id="8dc4ffb4-5c97-478f-b393-d524cb985299" doc:name="Marketo Config" />
 
     <ns6:config name="ActiveMQ" doc:id="5411c616-8b37-48d4-b875-2025440eef69" doc:name="JMS Config">
         <ns6:active-mq-connection password="${jms.password}" username="${jms.username}">
