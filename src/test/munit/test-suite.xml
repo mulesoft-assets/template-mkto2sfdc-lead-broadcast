@@ -59,14 +59,14 @@ output application/json
         	"lastName" : p('test.lastName1'),
             "email": p('test.email.mkto.us'),
             "country": "US",
-            "company" : p('test.firstName1') ++ " " ++ p('test.lastName1') 
+            "company" : p('test.firstName1') ++ " " ++ p('test.lastName1')
          },
          {
          	"firstName": p('test.firstName2'),
         	"lastName" : p('test.lastName2'),
             "email": p('test.email.mkto.ua'),
             "country": "UA",
-            "company" : p('test.firstName2') ++ " " ++ p('test.lastName2') 
+            "company" : p('test.firstName2') ++ " " ++ p('test.lastName2')
          }
      ]
 }]]></ee:set-payload>
@@ -111,8 +111,8 @@ vars.usCountry]]></ee:set-payload>
 			<flow-ref doc:name="Reference to checkSalesforceSubFlow" doc:id="e3b0ec3f-330c-4464-a243-962f51d0e5ae" name="checkSalesforceSubFlow"/>
 		</munit:execution>
 		<munit:validation >
-			<munit-tools:assert-that doc:name="Assert that if name in Salesforce A was updated" doc:id="181a806e-d419-4fcb-ab69-66c7ca8b9558" expression="#[vars.sfdcLead1.Name]" is="#[MunitTools::equalTo(p('test.firstName1') ++ &quot; &quot; ++ p('test.lastName1'))]"/>
-			<munit-tools:assert-that doc:name="Assert that if name in Salesforce B was updated" doc:id="170bfd71-6b0d-425b-9d7b-e07e0cf915a7" expression="#[vars.sfdcLead2.Name]" is="#[MunitTools::equalTo(p('test.firstName2') ++ &quot; &quot; ++ p('test.lastName2'))]"/>
+			<munit-tools:assert-that doc:name="Assert that if name in Salesforce A was updated" doc:id="181a806e-d419-4fcb-ab69-66c7ca8b9558" expression="#[vars.sfdcLead1.Name]" is="#[MunitTools::equalTo(p('test.firstName1') ++ &quot; &quot; ++ p('test.lastName1'))]" message="Assert that if name in Salesforce A was updated has failed"/>
+			<munit-tools:assert-that doc:name="Assert that if name in Salesforce B was updated" doc:id="170bfd71-6b0d-425b-9d7b-e07e0cf915a7" expression="#[vars.sfdcLead2.Name]" is="#[MunitTools::equalTo(p('test.firstName2') ++ &quot; &quot; ++ p('test.lastName2'))]" message="Assert that if name in Salesforce B was updated has failed"/>
 		</munit:validation>
 	</munit:test>
 	<sub-flow name="checkSalesforceSubFlow" doc:id="8bf34987-c2df-4803-a667-a2252d25db01" >
